@@ -71,10 +71,10 @@ contract Task4 with Deployable {
       bounce: true,
       body: Transfer{
         queryId: msg.queryId,
-        newOwner: sender(),
-        responseDestination: myAddress(),
-        customPayload: null,
-        forwardAmount:  ton("0.06"),
+        newOwner: msg.prevOwner,
+        responseDestination: context().sender,
+        customPayload: emptyCell(),
+        forwardAmount:  ton("0.01"),
         forwardPayload: emptySlice()
       }.toCell()});
       return;
