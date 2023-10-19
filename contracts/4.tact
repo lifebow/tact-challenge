@@ -66,7 +66,7 @@ contract Task4 with Deployable {
       
       send(SendParameters{
       to: context().sender,
-      value: 0,
+      value: context().value,
       mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
@@ -74,7 +74,7 @@ contract Task4 with Deployable {
         newOwner: msg.prevOwner,
         responseDestination: context().sender,
         customPayload: emptyCell(),
-        forwardAmount:  ton("0.01"),
+        forwardAmount:  context().value,
         forwardPayload: emptySlice()
       }.toCell()});
       return;
@@ -93,7 +93,7 @@ contract Task4 with Deployable {
     }
     send(SendParameters{
       to: context().sender,
-      value: 0,
+      value: myBalance() - context().value,
       mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
@@ -101,7 +101,7 @@ contract Task4 with Deployable {
         newOwner: self.prevOwner,
         responseDestination: context().sender,
         customPayload: null,
-        forwardAmount:  ton("0.06"),
+        forwardAmount:  myBalance() - context().value,
         forwardPayload: emptySlice()
 
       }.toCell()});
