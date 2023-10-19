@@ -102,7 +102,7 @@ contract Task4 with Deployable {
         newOwner: context().sender,
         responseDestination: context().sender,
         customPayload: null,
-        forwardAmount:  context().value,
+        forwardAmount:  ton("0.01"),
         forwardPayload: emptySlice()
       }.toCell()
       });
