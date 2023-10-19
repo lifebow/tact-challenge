@@ -91,7 +91,7 @@ contract Task4 with Deployable {
       return;
     }
     send(SendParameters{
-      to: self.nftAddress,
+      to: self.nftAddress!!,
       value: myBalance(),
       mode: SendRemainingValue,
       bounce: true,
