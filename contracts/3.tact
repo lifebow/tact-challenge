@@ -69,9 +69,7 @@ contract Task3 with Deployable {
 
   receive(msg: TokenNotification) {
     let tokenAddress: Address = sender();
-    if(!(tokenAddress == self.jettonAddressA || tokenAddress== self.jettonAddressB)){
-      throw(123);
-    }
+    require(tokenAddress == self.jettonAddressA || tokenAddress== self.jettonAddressB,"Not support token");
     if (msg.from == self.owner){
       if(tokenAddress == self.jettonAddressA){
         self.aAmount = self.aAmount +msg.amount;
@@ -83,7 +81,7 @@ contract Task3 with Deployable {
       //swap
       if(tokenAddress == self.jettonAddressA){
         let amountAIn: Int = msg.amount;
-        let amountBOut: Int = (self.bAmount * self.decimal / self.aAmount) * amountAIn / self.decimal;
+        let amountBOut: Int = self.price(tokenAddress) * amountAIn / self.decimal;
         if(self.bAmount < amountBOut){
           //refund token A to user
           self.refund(tokenAddress, msg.from, amountAIn);
@@ -97,10 +95,10 @@ contract Task3 with Deployable {
         //receive B -> A
         let amountBIn: Int = msg.amount;
         // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
-        let amountAOut: Int = (self.aAmount * self.decimal / self.bAmount) * amountBIn / self.decimal;
+        let amountAOut: Int = self.price(tokenAddress) * amountBIn / self.decimal;
         if(self.aAmount < amountAOut){
           //refund B to user
-          self.refund(self.jettonAddressB, msg.from, amountBIn);
+          self.transferToken(self.jettonAddressB, msg.from, amountBIn);
           return;
         }
         self.bAmount = self.bAmount + amountBIn;
@@ -108,7 +106,6 @@ contract Task3 with Deployable {
         //send token A to user
         self.transferToken(self.jettonAddressA,msg.from, amountAOut);
       }
-      
       return;
     }
   } 
