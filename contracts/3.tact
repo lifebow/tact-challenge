@@ -73,35 +73,33 @@ contract Task3 with Deployable {
     if (msg.from == self.owner){
       if(tokenAddress == self.jettonAddressA){
         self.aAmount = self.aAmount +msg.amount;
-      }else{
-        self.bAmount = self.bAmount + msg.amount;
+        return;
       }
+        self.bAmount = self.bAmount + msg.amount;
       return;
     } else{
       //swap
       if(tokenAddress == self.jettonAddressA){
-        let amountAIn: Int = msg.amount;
-        let amountBOut: Int = self.price(tokenAddress) * amountAIn / self.decimal;
+        let amountBOut: Int = (self.bAmount * self.decimal / self.aAmount) * msg.amount / self.decimal;
         if(self.bAmount < amountBOut){
           //refund token A to user
-          self.refund(tokenAddress, msg.from, amountAIn);
+          self.transferToken(tokenAddress, msg.from, msg.amount);
           return;
         }
-        self.aAmount = self.aAmount + amountAIn;
+        self.aAmount = self.aAmount + msg.amount;
         self.bAmount = self.bAmount - amountBOut;
         //send token B to user
         self.transferToken(self.jettonAddressB, msg.from, amountBOut);
       }else{
         //receive B -> A
-        let amountBIn: Int = msg.amount;
         // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
-        let amountAOut: Int = self.price(tokenAddress) * amountBIn / self.decimal;
+        let amountAOut: Int = (self.aAmount * self.decimal / self.bAmount * msg.amount) / self.decimal;
         if(self.aAmount < amountAOut){
           //refund B to user
-          self.transferToken(self.jettonAddressB, msg.from, amountBIn);
+          self.transferToken(self.jettonAddressB, msg.from, msg.amount);
           return;
         }
-        self.bAmount = self.bAmount + amountBIn;
+        self.bAmount = self.bAmount + msg.amount;
         self.aAmount = self.aAmount - amountAOut;
         //send token A to user
         self.transferToken(self.jettonAddressA,msg.from, amountAOut);
@@ -128,24 +126,6 @@ contract Task3 with Deployable {
       }.toCell()
     });
   }
-  fun refund(tokenAddress: Address, recipeint: Address, amount: Int){
-      send(SendParameters{
-      to: tokenAddress,
-      value: 0,
-      mode: SendRemainingValue,
-      bounce: false,
-      body: TokenTransfer{
-        queryId: 0,
-        amount: amount,
-        destination: recipeint,
-        responseDestination: myAddress(),
-        customPayload: null,
-        forwardTonAmount: ton("0.01"),
-        forwardPayload: emptySlice()
-
-      }.toCell()
-    });
-  }
   get fun price(jetton: Address): Int { 
     //price B  
     if (jetton == self.jettonAddressB ){
@@ -155,7 +135,6 @@ contract Task3 with Deployable {
   }
   
   get fun balance(jetton: Address): Int { 
-    require(jetton == self.jettonAddressA || jetton == self.jettonAddressB,"Not support token");
     if (jetton == self.jettonAddressA ){
       return self.aAmount ;
     }
