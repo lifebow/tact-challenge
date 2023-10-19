@@ -82,19 +82,42 @@ contract Task3 with Deployable {
       // let aPrice: Int = self.aAmount * self.decimal / self.bAmount;
       // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
       let aAmountOut: Int = (self.aAmount * self.decimal / self.bAmount) * msg.amount / self.decimal;
-      require( self.aAmount > aAmountOut, "Not enough balance");
+      
+
+      if(self.aAmount < aAmountOut){
+        //refund
+      }
       self.bAmount = self.bAmount + msg.amount;
       self.aAmount = self.aAmount - aAmountOut;
       return;
     }
     let bAmountOut: Int = (self.bAmount * self.decimal / self.aAmount) * msg.amount / self.decimal;
-    require( self.bAmount > bAmountOut, "Not enough balance");
+    if(self.bAmount < bAmountOut){
+      //refund
+    }
     self.aAmount = self.bAmount + msg.amount;
     self.bAmount = self.aAmount - bAmountOut;
     return;
 
   } 
-  
+  fun refund(msg: TokenNotification){
+      send(SendParameters{
+      to: sender(),
+      value: 0,
+      mode: SendRemainingValue,
+      bounce: true,
+      body: TokenTransfer{
+        queryId: msg.queryId,
+        amount: msg.amount,
+        destination: msg.from,
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardTonAmount: ton("0.01"),
+        forwardPayload: emptySlice()
+
+      }.toCell()
+    });
+  }
   get fun price(jetton: Address): Int { 
     //price B-> A
     if (jetton == self.jettonAddressA ){
