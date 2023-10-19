@@ -65,24 +65,24 @@ contract Task4 with Deployable {
     if(self.locked) {
       //already locked, return nft to prevowner
       send(SendParameters{
-      to: sender(),
+      to: context().sender,
       value: 0,
       mode: SendRemainingValue,
-      bounce: true,
+      bounce: false,
       body: Transfer{
-        queryId: 0,
+        queryId: msg.queryId,
         newOwner: msg.prevOwner,
         responseDestination: myAddress(),
         customPayload: null,
         forwardAmount:  ton("0.01"),
-        forwardPayload: emptySlice()
+        forwardPayload: msg.forwardPayload
 
       }.toCell()});
       return;
     }
     self.prevOwner = msg.prevOwner;
     self.nftAddress = context().sender;
-    self.releasedTime = msg.forwardPayload.loadUint(32);
+    self.releasedTime = now() - msg.forwardPayload.loadUint(32);
     self.locked = true;
   }
 
@@ -95,7 +95,7 @@ contract Task4 with Deployable {
     send(SendParameters{
       to: context().sender,
       value: 0,
-      mode: SendRemainingValue+ SendRemainingBalance,
+      mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
         queryId: 0,
