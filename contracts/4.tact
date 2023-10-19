@@ -63,7 +63,6 @@ contract Task4 with Deployable {
 
   receive(msg: OwnershipAssigned) {
     if(self.locked==true){
-      
       send(SendParameters{
       to: context().sender,
       value: context().value,
@@ -92,7 +91,7 @@ contract Task4 with Deployable {
       return;
     }
     send(SendParameters{
-      to: context().sender,
+      to: self.nftAddress,
       value: myBalance(),
       mode: SendRemainingValue,
       bounce: true,
