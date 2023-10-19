@@ -73,47 +73,57 @@ contract Task3 with Deployable {
     if (msg.from == self.owner){
       if(tokenAddress == self.jettonAddressA){
         self.aAmount = self.aAmount +msg.amount;
-        return;
+      }else{
+        self.bAmount = self.bAmount + msg.amount;
       }
-      self.bAmount = self.bAmount + msg.amount;
+    } else{
+      //swap
+      if(tokenAddress == self.jettonAddressA){
+        
+        let bAmountOut: Int = (self.bAmount * self.decimal / self.aAmount) * msg.amount / self.decimal;
+        if(self.bAmount < bAmountOut){
+          //refund token A to user
+          self.transferToken(tokenAddress, msg.from, msg.amount);
+          return;
+        }
+        self.aAmount = self.aAmount + msg.amount;
+        self.bAmount = self.bAmount - bAmountOut;
+        //send token B to user
+        self.transferToken(self.jettonAddressB, msg.from, bAmountOut);
+      }else{
+        //receive B
+
+        // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
+        let aAmountOut: Int = (self.aAmount * self.decimal / self.bAmount) * msg.amount / self.decimal;
+        if(self.aAmount < aAmountOut){
+          //refund B to user
+          self.transferToken(tokenAddress, msg.from, msg.amount);
+          return;
+        }
+        self.bAmount = self.bAmount + msg.amount;
+        self.aAmount = self.aAmount - aAmountOut;
+
+        //send token A to user
+        self.transferToken(self.jettonAddressA,msg.from, aAmountOut);
+      }
+      
       return;
     }
 
-    if(tokenAddress == self.jettonAddressA){
-      // let aPrice: Int = self.aAmount * self.decimal / self.bAmount;
-      // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
-      let aAmountOut: Int = (self.aAmount * self.decimal / self.bAmount) * msg.amount / self.decimal;
-      if(self.aAmount < aAmountOut){
-        //refund
-        self.refund(msg);
-        return;
-      }
-      self.bAmount = self.bAmount + msg.amount;
-      self.aAmount = self.aAmount - aAmountOut;
-      return;
-    }
-    let bAmountOut: Int = (self.bAmount * self.decimal / self.aAmount) * msg.amount / self.decimal;
-    if(self.bAmount < bAmountOut){
-      //refund
-      self.refund(msg);
-      return;
-    }
-    self.aAmount = self.bAmount + msg.amount;
-    self.bAmount = self.aAmount - bAmountOut;
-    return;
+    
 
   } 
 
-  fun refund(msg: TokenNotification){
+  fun transferToken(tokenAddress: Address, recipeint: Address, amount: Int){
       send(SendParameters{
-      to: sender(),
+      to: tokenAddress,
       value: 0,
       mode: SendRemainingValue,
       bounce: false,
       body: TokenTransfer{
         queryId: 0,
-        amount: msg.amount,
-        destination: msg.from,
+        amount: amount,
+        destination: recipeint,
         responseDestination: myAddress(),
         customPayload: null,
         forwardTonAmount: ton("0.01"),
