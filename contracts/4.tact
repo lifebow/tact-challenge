@@ -88,33 +88,33 @@ contract Task4 with Deployable {
   //   if(!self.locked || self.nftAddress != msg.nftAddress){
   //     return;
   //   }
-  //   if(now()<= self.releasedTime && self.locked){
-  //       send(SendParameters{
-  //       to: sender(),
-  //       value: 0, 
-  //       mode: SendRemainingValue, 
-  //       bounce: true, 
-  //       body: "NFT is still locked".asComment()
-  //   });
-  //     // self.reply("NFT is still locked".asComment());
-  //     return;
-  //   }
-  //   send(SendParameters{
-  //     to: sender(),
-  //     value: 0,
-  //     mode: SendRemainingValue + SendRemainingBalance,
-  //     bounce: true,
-  //     body: Transfer{
-  //       queryId: msg.queryId,
-  //       newOwner: self.prevOwner,
-  //       responseDestination: myAddress(),
-  //       customPayload: null,
-  //       forwardAmount:  ton("0.0"),
-  //       forwardPayload: emptySlice()
+    if(now()<= self.releasedTime && self.releasedTime > 1){
+        send(SendParameters{
+        to: sender(),
+        value: 0, 
+        mode: SendRemainingValue, 
+        bounce: true, 
+        body: "NFT is still locked".asComment()
+    });
+      // self.reply("NFT is still locked".asComment());
+      return;
+    }
+    send(SendParameters{
+      to: sender(),
+      value: 0,
+      mode: SendRemainingValue + SendRemainingBalance,
+      bounce: true,
+      body: Transfer{
+        queryId: msg.queryId,
+        newOwner: self.prevOwner,
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardAmount:  ton("0.0"),
+        forwardPayload: emptySlice()
 
-  //     }.toCell()});
-  //     self.locked = false;
-  //     return;
+      }.toCell()});
+      self.releasedTime = 1;
+      return;
   }
 
   get fun time(): Int {
