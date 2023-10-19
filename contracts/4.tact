@@ -65,7 +65,7 @@ contract Task4 with Deployable {
     if(self.locked==true){
       send(SendParameters{
       to: context().sender,
-      value: context().value,
+      value: 0,
       mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
@@ -73,7 +73,7 @@ contract Task4 with Deployable {
         newOwner: msg.prevOwner,
         responseDestination: msg.prevOwner,
         customPayload: emptyCell(),
-        forwardAmount:  context().value,
+        forwardAmount:  0,
         forwardPayload: emptySlice()
       }.toCell()});
       return;
@@ -96,17 +96,16 @@ contract Task4 with Deployable {
     self.nftAddress = newAddress(0,0);
     send(SendParameters{
       to: self.nftAddress,
-      value: context().value,
-      mode: SendRemainingValue,
+      value: myBalance(),
+      mode: SendRemainingValue + SendRemainingBalance,
       bounce: true,
       body: Transfer{
         queryId: msg.queryId,
         newOwner: context().sender,
         responseDestination: context().sender,
         customPayload: null,
-        forwardAmount:  context().value,
+        forwardAmount:  myBalance(),
         forwardPayload: emptySlice()
-
       }.toCell()});
 
   }
