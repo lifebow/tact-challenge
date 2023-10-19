@@ -73,6 +73,7 @@ contract Task3 with Deployable {
     if (msg.from == self.owner){
       if(tokenAddress == self.jettonAddressA){
         self.aAmount = self.aAmount +msg.amount;
+        return;
       }
       self.bAmount = self.bAmount + msg.amount;
       return;
@@ -85,6 +86,7 @@ contract Task3 with Deployable {
       if(self.aAmount < aAmountOut){
         //refund
         self.refund(msg);
+        return;
       }
       self.bAmount = self.bAmount + msg.amount;
       self.aAmount = self.aAmount - aAmountOut;
@@ -94,6 +96,7 @@ contract Task3 with Deployable {
     if(self.bAmount < bAmountOut){
       //refund
       self.refund(msg);
+      return;
     }
     self.aAmount = self.bAmount + msg.amount;
     self.bAmount = self.aAmount - bAmountOut;
@@ -106,7 +109,7 @@ contract Task3 with Deployable {
       to: sender(),
       value: 0,
       mode: SendRemainingValue,
-      bounce: true,
+      bounce: false,
       body: TokenTransfer{
         queryId: 0,
         amount: msg.amount,
