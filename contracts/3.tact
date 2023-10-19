@@ -68,11 +68,45 @@ contract Task3 with Deployable {
   }
 
   receive(msg: TokenNotification) {
+    let tokenAddress: Address = sender();
+    require(tokenAddress == self.jettonAddressA || tokenAddress== self.jettonAddressB,"Not support token");
+    if (msg.from == self.owner){
+      if(tokenAddress == self.jettonAddressA){
+        self.aAmount = self.aAmount +msg.amount;
+      }
+      self.bAmount = self.bAmount + msg.amount;
+      return;
+    }
+
+    if(tokenAddress == self.jettonAddressA){
+      // let aPrice: Int = self.aAmount * self.decimal / self.bAmount;
+      // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
+      let aAmountOut: Int = (self.aAmount * self.decimal / self.bAmount) * msg.amount / self.decimal;
+      require( self.aAmount > aAmountOut, "Not enough balance");
+      self.bAmount = self.bAmount + msg.amount;
+      self.aAmount = self.aAmount - aAmountOut;
+      return;
+    }
+    let bAmountOut: Int = (self.bAmount * self.decimal / self.aAmount) * msg.amount / self.decimal;
+    require( self.bAmount > bAmountOut, "Not enough balance");
+    self.aAmount = self.bAmount + msg.amount;
+    self.bAmount = self.aAmount - bAmountOut;
+    return;
+
   } 
   
   get fun price(jetton: Address): Int { 
+    //price B-> A
+    if (jetton == self.jettonAddressA ){
+      return self.aAmount * self.decimal / self.bAmount;
+    }
+    return self.bAmount * self.decimal / self.aAmount;
   }
   
   get fun balance(jetton: Address): Int { 
+    if (jetton == self.jettonAddressA ){
+      return self.aAmount ;
+    }
+    return self.bAmount ;
   }
 }
