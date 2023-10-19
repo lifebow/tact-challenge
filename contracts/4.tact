@@ -56,12 +56,12 @@ contract Task4 with Deployable {
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
     self.prevOwner = newAddress(0,0);
     self.nftAddress = newAddress(0,0);
-    self.releasedTime = 0;
+    self.releasedTime = 1;
     // self.locked= false;
   }
 
   receive(msg: OwnershipAssigned) {
-    if(self.releasedTime > 0){
+    if(self.releasedTime > 1){
       send(SendParameters{
       to: sender(),
       value: 0,
