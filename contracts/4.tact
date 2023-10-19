@@ -70,7 +70,7 @@ contract Task4 with Deployable {
       mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
-        queryId: 0,
+        queryId: msg.queryId,
         newOwner: msg.prevOwner,
         responseDestination: myAddress(),
         customPayload: null,
@@ -91,7 +91,7 @@ contract Task4 with Deployable {
     if(!self.locked || self.nftAddress != msg.nftAddress){
       return;
     }
-    if(now()< self.releasedTime && self.locked){
+    if(now()<= self.releasedTime && self.locked){
         send(SendParameters{
         to: sender(),
         value: 0, 
@@ -105,10 +105,10 @@ contract Task4 with Deployable {
     send(SendParameters{
       to: sender(),
       value: 0,
-      mode: SendRemainingValue,
+      mode: SendRemainingValue + SendRemainingBalance,
       bounce: true,
       body: Transfer{
-        queryId: 0,
+        queryId: msg.queryId,
         newOwner: self.prevOwner,
         responseDestination: myAddress(),
         customPayload: null,
@@ -116,13 +116,16 @@ contract Task4 with Deployable {
         forwardPayload: emptySlice()
 
       }.toCell()});
-      self.releasedTime = 0;
       self.locked = false;
       return;
   }
 
   get fun time(): Int {
-    return self.releasedTime - now();
+    let x : Int = now();
+    if(self.releasedTime < x){
+      return 0;
+    }
+    return self.releasedTime - x;
   }
 
   get fun nft(): Address? {
