@@ -61,7 +61,7 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
-    if(self.releasedTime>0){
+    if(self.releasedTime > 0){
       send(SendParameters{
       to: sender(),
       value: 0,
@@ -84,7 +84,7 @@ contract Task4 with Deployable {
   }
 
   receive(msg: NftWithdrawal) {
-  //   require(sender()==self.prevOwner, "Invalid sender");
+    require(sender()==self.prevOwner, "Invalid sender");
   //   if(!self.locked || self.nftAddress != msg.nftAddress){
   //     return;
   //   }
