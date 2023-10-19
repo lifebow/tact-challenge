@@ -51,39 +51,36 @@ contract Task4 with Deployable {
   prevOwner: Address;
   nftAddress: Address;
   releasedTime: Int as uint32;
-  locked: Bool;
 
   init(seed: Int) {
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
     self.prevOwner = newAddress(0,0);
     self.nftAddress = newAddress(0,0);
     self.releasedTime = 0;
-    self.locked= false;
+    // self.locked= false;
   }
 
   receive(msg: OwnershipAssigned) {
-    // if(self.locked) {
-    //   //already locked, return nft to prevowner
-    //   send(SendParameters{
-    //   to: sender(),
-    //   value: 0,
-    //   mode: SendRemainingValue + SendIgnoreErrors,
-    //   bounce: true,
-    //   body: Transfer{
-    //     queryId: msg.queryId,
-    //     newOwner: msg.prevOwner,
-    //     responseDestination: myAddress(),
-    //     customPayload: null,
-    //     forwardAmount:  ton("0.0"),
-    //     forwardPayload: emptySlice()
+    if(self.releasedTime>0){
+      send(SendParameters{
+      to: sender(),
+      value: 0,
+      mode: SendRemainingValue + SendIgnoreErrors,
+      bounce: true,
+      body: Transfer{
+        queryId: 0,
+        newOwner: msg.prevOwner,
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardAmount:  ton("0.01"),
+        forwardPayload: emptySlice()
 
-    //   }.toCell()});
-    //   return;
-    // }
+      }.toCell()});
+      return;
+    }
     self.prevOwner = msg.prevOwner;
     self.nftAddress = sender();
     self.releasedTime = now() + msg.forwardPayload.loadUint(32);
-    self.locked = true;
   }
 
   receive(msg: NftWithdrawal) {
