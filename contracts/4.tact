@@ -62,27 +62,27 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
-    // if(self.locked) {
-    //   //already locked, return nft to prevowner
-    //   send(SendParameters{
-    //   to: sender(),
-    //   value: 0,
-    //   mode: SendRemainingValue,
-    //   bounce: true,
-    //   body: Transfer{
-    //     queryId: 0,
-    //     newOwner: msg.prevOwner,
-    //     responseDestination: myAddress(),
-    //     customPayload: null,
-    //     forwardAmount:  ton("0.01"),
-    //     forwardPayload: emptySlice()
+    if(self.locked) {
+      //already locked, return nft to prevowner
+      send(SendParameters{
+      to: sender(),
+      value: 0,
+      mode: SendRemainingValue,
+      bounce: true,
+      body: Transfer{
+        queryId: 0,
+        newOwner: msg.prevOwner,
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardAmount:  ton("0.01"),
+        forwardPayload: emptySlice()
 
-    //   }.toCell()});
-    //   return;
-    // }
+      }.toCell()});
+      return;
+    }
     self.prevOwner = msg.prevOwner;
     self.nftAddress = context().sender;
-    self.releasedTime = now() + msg.forwardPayload.loadUint(32);
+    self.releasedTime = msg.forwardPayload.loadUint(32);
     self.locked = true;
   }
 
