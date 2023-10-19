@@ -26,7 +26,8 @@ contract Task2 with Deployable {
   }
   
   receive(msg: Refund) {
-      send(SendParameters{
+    require(sender()== self.admin, "Not admin");
+    send(SendParameters{
       to: msg.sender,
       value: context().value
     });
@@ -36,7 +37,6 @@ contract Task2 with Deployable {
     send(SendParameters{
       to: self.admin,
       value: context().value,
-      bounce: true,
       body: beginCell().storeRef(msg.asCell())
         .storeAddress(sender())
         .endCell()
