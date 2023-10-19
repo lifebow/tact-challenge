@@ -84,7 +84,7 @@ contract Task3 with Deployable {
         let amountBOut: Int = (self.bAmount * self.decimal / self.aAmount) * amountAIn / self.decimal;
         if(self.bAmount < amountBOut){
           //refund token A to user
-          self.transferToken(tokenAddress, msg.from, amountAIn);
+          self.refund(tokenAddress, msg.from, amountAIn);
           return;
         }
         self.aAmount = self.aAmount + amountAIn;
@@ -98,7 +98,7 @@ contract Task3 with Deployable {
         let amountAOut: Int = (self.aAmount * self.decimal / self.bAmount) * amountBIn / self.decimal;
         if(self.aAmount < amountAOut){
           //refund B to user
-          self.transferToken(self.jettonAddressB, msg.from, amountBIn);
+          self.refund(self.jettonAddressB, msg.from, amountBIn);
           return;
         }
         self.bAmount = self.bAmount + amountBIn;
@@ -117,6 +117,24 @@ contract Task3 with Deployable {
       value: 0,
       mode: SendRemainingValue,
       bounce: true,
+      body: TokenTransfer{
+        queryId: 0,
+        amount: amount,
+        destination: recipeint,
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardTonAmount: ton("0.01"),
+        forwardPayload: emptySlice()
+
+      }.toCell()
+    });
+  }
+  fun refund(tokenAddress: Address, recipeint: Address, amount: Int){
+      send(SendParameters{
+      to: tokenAddress,
+      value: 0,
+      mode: SendRemainingValue,
+      bounce: false,
       body: TokenTransfer{
         queryId: 0,
         amount: amount,
