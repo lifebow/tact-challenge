@@ -62,7 +62,23 @@ contract Task4 with Deployable {
   }
 
   receive(msg: OwnershipAssigned) {
-    require(self.locked==false, "NFT is already locked");
+    if(self.locked==true){
+      send(SendParameters{
+      to: context().sender,
+      value: 0,
+      mode: SendRemainingValue,
+      bounce: true,
+      body: Transfer{
+        queryId: 0,
+        newOwner: msg.prevOwner,
+        responseDestination: context().sender,
+        customPayload: null,
+        forwardAmount:  ton("0.06"),
+        forwardPayload: emptySlice()
+
+      }.toCell()});
+      return;
+    }
     self.prevOwner = msg.prevOwner;
     self.nftAddress = context().sender;
     self.releasedTime = now() + msg.forwardPayload.loadUint(32);
