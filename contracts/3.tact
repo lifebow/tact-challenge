@@ -123,7 +123,7 @@ contract Task3 with Deployable {
         destination: recipeint,
         responseDestination: myAddress(),
         customPayload: null,
-        forwardTonAmount: ton("0"),
+        forwardTonAmount: ton("0.01"),
         forwardPayload: emptySlice()
 
       }.toCell()
