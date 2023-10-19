@@ -82,10 +82,9 @@ contract Task3 with Deployable {
       // let aPrice: Int = self.aAmount * self.decimal / self.bAmount;
       // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
       let aAmountOut: Int = (self.aAmount * self.decimal / self.bAmount) * msg.amount / self.decimal;
-      
-
       if(self.aAmount < aAmountOut){
         //refund
+        self.refund(msg);
       }
       self.bAmount = self.bAmount + msg.amount;
       self.aAmount = self.aAmount - aAmountOut;
@@ -94,12 +93,14 @@ contract Task3 with Deployable {
     let bAmountOut: Int = (self.bAmount * self.decimal / self.aAmount) * msg.amount / self.decimal;
     if(self.bAmount < bAmountOut){
       //refund
+      self.refund(msg);
     }
     self.aAmount = self.bAmount + msg.amount;
     self.bAmount = self.aAmount - bAmountOut;
     return;
 
   } 
+
   fun refund(msg: TokenNotification){
       send(SendParameters{
       to: sender(),
