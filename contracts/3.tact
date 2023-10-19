@@ -76,42 +76,39 @@ contract Task3 with Deployable {
       }else{
         self.bAmount = self.bAmount + msg.amount;
       }
+      return;
     } else{
       //swap
       if(tokenAddress == self.jettonAddressA){
-        
-        let bAmountOut: Int = (self.bAmount * self.decimal / self.aAmount) * msg.amount / self.decimal;
-        if(self.bAmount < bAmountOut){
+        let amountAIn: Int = msg.amount;
+        let amountBOut: Int = (self.bAmount * self.decimal / self.aAmount) * amountAIn / self.decimal;
+        if(self.bAmount < amountBOut){
           //refund token A to user
-          self.transferToken(tokenAddress, msg.from, msg.amount);
+          self.transferToken(tokenAddress, msg.from, amountAIn);
           return;
         }
-        self.aAmount = self.aAmount + msg.amount;
-        self.bAmount = self.bAmount - bAmountOut;
+        self.aAmount = self.aAmount + amountAIn;
+        self.bAmount = self.bAmount - amountBOut;
         //send token B to user
-        self.transferToken(self.jettonAddressB, msg.from, bAmountOut);
+        self.transferToken(self.jettonAddressB, msg.from, amountBOut);
       }else{
-        //receive B
-
+        //receive B -> A
+        let amountBIn: Int = msg.amount;
         // (amountOfJettonAOnContract * decimal / amountOfJettonBOnContract) * amountOfTokenBToSwap / decimal
-        let aAmountOut: Int = (self.aAmount * self.decimal / self.bAmount) * msg.amount / self.decimal;
-        if(self.aAmount < aAmountOut){
+        let amountAOut: Int = (self.aAmount * self.decimal / self.bAmount) * amountBIn / self.decimal;
+        if(self.aAmount < amountAOut){
           //refund B to user
-          self.transferToken(tokenAddress, msg.from, msg.amount);
+          self.transferToken(self.jettonAddressB, msg.from, amountBIn);
           return;
         }
-        self.bAmount = self.bAmount + msg.amount;
-        self.aAmount = self.aAmount - aAmountOut;
-
+        self.bAmount = self.bAmount + amountBIn;
+        self.aAmount = self.aAmount - amountAOut;
         //send token A to user
-        self.transferToken(self.jettonAddressA,msg.from, aAmountOut);
+        self.transferToken(self.jettonAddressA,msg.from, amountAOut);
       }
       
       return;
     }
-
-    
-
   } 
 
   fun transferToken(tokenAddress: Address, recipeint: Address, amount: Int){
@@ -126,7 +123,7 @@ contract Task3 with Deployable {
         destination: recipeint,
         responseDestination: myAddress(),
         customPayload: null,
-        forwardTonAmount: ton("0.01"),
+        forwardTonAmount: ton("0"),
         forwardPayload: emptySlice()
 
       }.toCell()
