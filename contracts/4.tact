@@ -48,8 +48,8 @@ message NftWithdrawal {
 
 contract Task4 with Deployable {
   seed: Int as uint128;
-  prevOwner: Address;
-  nftAddress: Address;
+  prevOwner: Address?;
+  nftAddress: Address?;
   releasedTime: Int as uint32;
 
   init(seed: Int) {
@@ -93,7 +93,7 @@ contract Task4 with Deployable {
     self.prevOwner = null;
     self.nftAddress = null;
     send(SendParameters{
-      to: self.nftAddress,
+      to: self.nftAddress!!,
       value: 0,
       mode: SendRemainingValue +SendIgnoreErrors,
       bounce: true,
