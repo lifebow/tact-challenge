@@ -51,21 +51,23 @@ contract Task4 with Deployable {
   prevOwner: Address;
   nftAddress: Address;
   releasedTime: Int as uint32;
+  locked: Bool;
 
   init(seed: Int) {
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
     self.prevOwner = newAddress(0,0);
     self.nftAddress = newAddress(0,0);
-    self.releasedTime = 1;
-    // self.locked= false;
+    self.releasedTime = 0;
+    self.locked= false;
   }
 
   receive(msg: OwnershipAssigned) {
-    if(self.releasedTime > 1){
+    if(self.locked) {
+      //already locked, return nft to prevowner
       send(SendParameters{
       to: sender(),
       value: 0,
-      mode: SendRemainingValue + SendIgnoreErrors,
+      mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
         queryId: 0,
@@ -81,48 +83,37 @@ contract Task4 with Deployable {
     self.prevOwner = msg.prevOwner;
     self.nftAddress = sender();
     self.releasedTime = now() + msg.forwardPayload.loadUint(32);
+    self.locked = true;
   }
 
   receive(msg: NftWithdrawal) {
     require(sender()==self.prevOwner, "Invalid sender");
-  //   if(!self.locked || self.nftAddress != msg.nftAddress){
-  //     return;
-  //   }
-    if(now()<= self.releasedTime && self.releasedTime > 1){
-        send(SendParameters{
-        to: sender(),
-        value: 0, 
-        mode: SendRemainingValue, 
-        bounce: true, 
-        body: "NFT is still locked".asComment()
-    });
-      // self.reply("NFT is still locked".asComment());
+    if(now()< self.releasedTime){
+      self.reply("NFT is still locked".asComment());
       return;
     }
     send(SendParameters{
       to: sender(),
       value: 0,
-      mode: SendRemainingValue + SendRemainingBalance,
+      mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
-        queryId: msg.queryId,
+        queryId: 0,
         newOwner: self.prevOwner,
         responseDestination: myAddress(),
         customPayload: null,
-        forwardAmount:  ton("0.0"),
+        forwardAmount:  ton("0.01"),
         forwardPayload: emptySlice()
 
       }.toCell()});
-      self.releasedTime = 1;
+      self.releasedTime = 0;
+      self.locked = false;
       return;
+
   }
 
   get fun time(): Int {
-    let x : Int = now();
-    if(self.releasedTime < x){
-      return 0;
-    }
-    return self.releasedTime - x;
+    return self.releasedTime - now();
   }
 
   get fun nft(): Address? {
