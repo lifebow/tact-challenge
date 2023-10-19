@@ -95,14 +95,14 @@ contract Task4 with Deployable {
     send(SendParameters{
       to: self.nftAddress,
       value: 0,
-      mode: SendRemainingBalance + SendIgnoreErrors,
+      mode: SendRemainingValue,
       bounce: true,
       body: Transfer{
         queryId: msg.queryId,
         newOwner: context().sender,
         responseDestination: myAddress(),
         customPayload: null,
-        forwardAmount:  myBalance()-context().value,
+        forwardAmount:  0,
         forwardPayload: emptySlice()
       }.toCell()
       });
