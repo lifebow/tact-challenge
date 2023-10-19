@@ -105,6 +105,7 @@ contract Task4 with Deployable {
         forwardPayload: emptySlice()
 
       }.toCell()});
+      self.releasedTime = 0;
       return;
     // }{
     //   // require(self.nftAddress==msg.nftAddress, "Invalid nft address");
