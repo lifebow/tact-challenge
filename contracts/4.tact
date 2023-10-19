@@ -86,7 +86,7 @@ contract Task4 with Deployable {
     self.locked = true;
   }
 
-  // receive(msg: NftWithdrawal) {
+  receive(msg: NftWithdrawal) {
   //   require(sender()==self.prevOwner, "Invalid sender");
   //   if(!self.locked || self.nftAddress != msg.nftAddress){
   //     return;
@@ -118,7 +118,7 @@ contract Task4 with Deployable {
   //     }.toCell()});
   //     self.locked = false;
   //     return;
-  // }
+  }
 
   get fun time(): Int {
     let x : Int = now();
