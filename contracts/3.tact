@@ -147,9 +147,8 @@ contract Task3 with Deployable {
     });
   }
   get fun price(jetton: Address): Int { 
-    //price B-> A
-    require(jetton == self.jettonAddressA || jetton == self.jettonAddressB,"Not support token");
-    if (jetton == self.jettonAddressA ){
+    //price B  
+    if (jetton == self.jettonAddressB ){
       return self.aAmount * self.decimal / self.bAmount;
     }
     return self.bAmount * self.decimal / self.aAmount;
