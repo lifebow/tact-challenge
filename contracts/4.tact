@@ -51,7 +51,6 @@ contract Task4 with Deployable {
   prevOwner: Address;
   nftAddress: Address;
   releasedTime: Int as uint32;
-  locked: Bool;
 
   init(seed: Int) {
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
@@ -76,7 +75,7 @@ contract Task4 with Deployable {
                 forwardAmount: 0,
                 forwardPayload: emptySlice()
             }.toCell()
-        }
+        });
       return;
     }
     self.prevOwner = msg.prevOwner;
