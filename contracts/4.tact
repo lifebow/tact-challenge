@@ -48,23 +48,90 @@ message NftWithdrawal {
 
 contract Task4 with Deployable {
   seed: Int as uint128;
-  
+  prevOwner: Address;
+  nftAddress: Address;
+  releasedTime: Int as uint32;
+
   init(seed: Int) {
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
+    self.prevOwner = newAddress(0,0);
+    self.nftAddress = newAddress(0,0);
+    self.releasedTime = 0;
   }
 
   receive(msg: OwnershipAssigned) {
+    if(self.releasedTime > 0) {
+      //already locked, return nft to prevowner
+      send(SendParameters{
+      to: sender(),
+      value: 0,
+      mode: SendRemainingValue,
+      bounce: true,
+      body: Transfer{
+        queryId: 0,
+        newOwner: msg.prevOwner,
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardAmount:  ton("0.01"),
+        forwardPayload: emptySlice()
+
+      }.toCell()});
+      return;
+    }
+    self.prevOwner = msg.prevOwner;
+    self.nftAddress = sender();
+    self.releasedTime = now() + msg.forwardPayload.loadUint(4);
   }
 
   receive(msg: NftWithdrawal) {
+    require(sender()==self.prevOwner, "Invalid sender");
+    if(now()< self.releasedTime){
+      self.reply("NFT is still locked".asComment());
+      return;
+    }
+    send(SendParameters{
+      to: sender(),
+      value: 0,
+      mode: SendRemainingValue,
+      bounce: true,
+      body: Transfer{
+        queryId: 0,
+        newOwner: self.prevOwner,
+        responseDestination: myAddress(),
+        customPayload: null,
+        forwardAmount:  ton("0.01"),
+        forwardPayload: emptySlice()
+
+      }.toCell()});
+      return;
+    // }{
+    //   // require(self.nftAddress==msg.nftAddress, "Invalid nft address");
+    //   send(SendParameters{
+    //   to: self.nftAddress,
+    //   value: 0,
+    //   mode: SendRemainingValue,
+    //   bounce: true,
+    //   body: Transfer{
+    //     queryId: 0,
+    //     newOwner: msg.prevOwner,
+    //     responseDestination: myAddress(),
+    //     customPayload: null,
+    //     forwardAmount:  ton("0.01"),
+    //     forwardPayload: emptySlice()
+
+    //   }.toCell()});
+    // }
   }
 
   get fun time(): Int {
+    return self.releasedTime - now();
   }
 
   get fun nft(): Address? {
+    return self.nftAddress;
   }
 
   get fun owner(): Address? {
+    return self.prevOwner;
   }
 }
