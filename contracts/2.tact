@@ -29,7 +29,9 @@ contract Task2 with Deployable {
     require(sender()== self.admin, "Not admin");
     send(SendParameters{
       to: msg.sender,
-      value: context().value
+      value: context().value,
+      mode: SendRemainingValue,
+      bounce: true
     });
   }
 
@@ -37,7 +39,8 @@ contract Task2 with Deployable {
     send(SendParameters{
       to: self.admin,
       value: context().value,
-      mode: SendIgnoreErrors,
+      mode: SendRemainingValue,
+      bounce: true,
       body: beginCell().storeRef(msg.asCell())
         .storeAddress(sender())
         .endCell()
