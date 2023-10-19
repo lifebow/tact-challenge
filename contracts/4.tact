@@ -67,11 +67,11 @@ contract Task4 with Deployable {
       send(SendParameters{
       to: context().sender,
       value: 0,
-      mode: SendIgnoreErrors,
-      bounce: false,
+      mode: SendRemainingValue,
+      bounce: true,
       body: Transfer{
         queryId: msg.queryId,
-        newOwner: msg.prevOwner,
+        newOwner: sender(),
         responseDestination: myAddress(),
         customPayload: null,
         forwardAmount:  ton("0.06"),
