@@ -76,6 +76,7 @@ contract Task4 with Deployable {
         forwardAmount:  context().value,
         forwardPayload: emptySlice()
       }.toCell()});
+      return;
     }
     self.prevOwner = msg.prevOwner;
     self.nftAddress = context().sender;
