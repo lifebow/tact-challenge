@@ -74,13 +74,11 @@ contract Task5 with Deployable {
   owner: Address;
   mNfts: map<Int as uint16,Address>; // <key,nftAddress>
   totalNftsHeld: Int as uint16;
-  savedBalance: Int as coins;
   init(seed: Int, owner: Address) {
     self.owner = owner;
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
     self.mNfts = emptyMap();
     self.totalNftsHeld=0;
-    self.savedBalance = 0;
   }
 
   receive(msg: OwnershipAssigned) {
@@ -184,7 +182,6 @@ contract Task5 with Deployable {
   // - SC should be able to withdraw all NFTs by a single message from admin
     require(context().value >= ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
     require(sender() == self.owner, "Invalid sender");
-    self.savedBalance = myBalance() - context().value;
     self.adminWithdrawalAllNFTsContinue(msg.queryId);
   }
 
@@ -195,7 +192,7 @@ contract Task5 with Deployable {
         self.mNfts.set(self.totalNftsHeld, null);
 
         if(self.totalNftsHeld == 0){
-          nativeReserve(self.savedBalance, 0);
+          nativeReserve(myBalance() - context().value, 0);
           send(
             SendParameters{
               to: nftToSend!!,
@@ -230,8 +227,8 @@ contract Task5 with Deployable {
               }.toCell()
           });
 
-        if((self.totalNftsHeld % 100) == 0 && self.totalNftsHeld > 0){
-          nativeReserve(self.savedBalance, 0);
+        if((self.totalNftsHeld % 100) && self.totalNftsHeld > 0){
+          nativeReserve(myBalance() - context().value, 0);
           send(
             SendParameters{
               to: myAddress(),
@@ -258,5 +255,4 @@ contract Task5 with Deployable {
   get fun nfts(): map<Int as uint16, Address> { 
     return self.mNfts;
   }
-
 }
