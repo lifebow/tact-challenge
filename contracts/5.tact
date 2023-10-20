@@ -74,13 +74,11 @@ contract Task5 with Deployable {
   owner: Address;
   mNfts: map<Int as uint16,Address>; // <key,nftAddress>
   totalNftsHeld: Int as uint16;
-  savedBalance: Int as uint16;
   init(seed: Int, owner: Address) {
     self.owner = owner;
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
     self.mNfts = emptyMap();
     self.totalNftsHeld=0;
-    self.savedBalance = 0;
   }
 
   receive(msg: OwnershipAssigned) {
@@ -114,8 +112,7 @@ contract Task5 with Deployable {
         });
       return;
     }
-    self.savedBalance = myBalance() - context().value + ton("2");
-    nativeReserve(self.savedBalance, 0);
+    nativeReserve(myBalance() - context().value + ton("2"), 0);
     let randomIndex: Int = random(0, self.totalNftsHeld);
     //collison the newest item
     if(randomIndex == self.totalNftsHeld){
@@ -186,7 +183,6 @@ contract Task5 with Deployable {
     require(context().value >= ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
     require(sender() == self.owner, "Invalid sender");
     self.adminWithdrawalAllNFTsContinue(msg.queryId);
-
   }
 
   fun adminWithdrawalAllNFTsContinue(msgid: Int){
@@ -198,7 +194,7 @@ contract Task5 with Deployable {
         self.mNfts.set(self.totalNftsHeld, null);
 
         if(self.totalNftsHeld == 0){
-          nativeReserve(self.savedBalance, 0);
+          nativeReserve(myBalance() - context().value, 0);
           send(
             SendParameters{
               to: nftToSend!!,
@@ -234,7 +230,7 @@ contract Task5 with Deployable {
           });
 
         if(j == 0 && self.totalNftsHeld > 0){
-          nativeReserve(self.savedBalance, 0);
+          nativeReserve(myBalance() - context().value, 0);
           send(
             SendParameters{
               to: myAddress(),
@@ -262,11 +258,11 @@ contract Task5 with Deployable {
     return self.mNfts;
   }
 
-  // get fun balance(): Int {
-  //   return myBalance();
-  // }
+  get fun balance(): Int {
+    return myBalance();
+  }
 
-  // get fun totalheld(): Int {
-  //   return self.totalNftsHeld;
-  // }
+  get fun totalheld(): Int {
+    return self.totalNftsHeld;
+  }
 }
