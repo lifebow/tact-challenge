@@ -187,7 +187,7 @@ contract Task5 with Deployable {
           SendParameters{
           to: nftToSend!!,
           value: ton("0.06"),
-          bounce: true,
+          bounce: false,
           mode: SendPayGasSeparately,
           body: Transfer{
               queryId: msg.queryId,
@@ -203,7 +203,7 @@ contract Task5 with Deployable {
           SendParameters{
           to: self.mNfts.get(0)!!,
           value: 0,
-          bounce: true,
+          bounce: false,
           mode: SendRemainingBalance,
           body: Transfer{
               queryId: msg.queryId,
