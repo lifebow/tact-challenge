@@ -90,13 +90,12 @@ contract Task5 with Deployable {
       return;
     }
     if(context().value < ton("2.1")){
-        nativeReserve(myBalance() - context().value, 0);
         send(
           SendParameters{
           to: sender(),
           value: 0,
           bounce: true,
-          mode: SendRemainingBalance,
+          mode: SendRemainingValue,
           body: Transfer{
               queryId: msg.queryId,
               newOwner: msg.prevOwner,
@@ -109,7 +108,6 @@ contract Task5 with Deployable {
       return;
     }
     nativeReserve(myBalance() - context().value + ton("2"), 0);
-    
     let randomIndex: Int = random(0, self.totalNftsHeld);
     //collison the newest item
     if(randomIndex == self.totalNftsHeld){
@@ -176,7 +174,7 @@ contract Task5 with Deployable {
   // - SC should check that sender is the admin, throw "Invalid sender" otherwise
   // - If all checks pass, SC should send NFTs one by one to the admin 
   // - SC should be able to withdraw all NFTs by a single message from admin
-    require(context().value == ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
+    require(context().value >= ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
     require(sender() == self.owner, "Invalid sender");
 
     while(self.totalNftsHeld > 0){
