@@ -67,24 +67,117 @@ message(0x5fcc3d14) Transfer {
 contract Task5 with Deployable {
   seed: Int as uint128;
   owner: Address;
-  
+
+  mNfts: map<Int as 16,Address>; // <key,nftAddress>
+  totalNftsHeld: Int as uint16;
   init(seed: Int, owner: Address) {
     self.owner = owner;
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
+    self.mNfts = emptyMap();
+    self.totalNftsHeld=0;
   }
 
   receive(msg: OwnershipAssigned) {
+  //  * OwnershipAssigned 
+  //  - if prevOwner is the owner's (admin) address, then add NFT to the collection
+  //  - if value of TON attached is less then 2.1 TON then stop execution and return NFT back,
+  //    but only in case that TON attached is enough to process refund without losing TONs on the SC's balance
+  //  - randomly select NFT to send from all the NFTs that smart contract has
+  //  - send the selected NFT to the sender with all remaining balance (except for admin profit = fees collected from this and other swaps)
+  //    In other words: the contract's balance should increase by exactly 2 TON, some incoming TONs will be consumed for gas and the remainings of the incoming TONs should be refunded to the sender
+    if(msg.prevOwner == self.owner){
+      self.mNfts.set(self.totalNftsHeld, sender())
+      self.totalNftsHeld = self.totalNftsHeld + 1;
+      return;
+    }
+    if(context().value < ton("2.1")){
+        send(
+          SendParameters{
+          to: sender(),
+          value: 0,
+          bounce: true,
+          mode: SendRemainingValue,
+          body: Transfer{
+              queryId: msg.queryId,
+              newOwner: msg.prevOwner,
+              responseDestination: msg.prevOwner,
+              customPayload: null,
+              forwardAmount: 0,
+              forwardPayload: emptySlice()
+          }.toCell()
+        });
+      return;
+    }
+    nativeReserve(myBalance() - context().value + ton("2"), 0);
+    let randomIndex: Int = random(0, self.totalNftsHeld);
+    //collison the newest item
+    if(randomInex == totalNftsHeld){
+      send(
+          SendParameters{
+          to: sender(),
+          value: 0,
+          bounce: true,
+          mode: SendRemainingBalance,
+          body: Transfer{
+              queryId: msg.queryId,
+              newOwner: msg.prevOwner,
+              responseDestination: msg.prevOwner,
+              customPayload: null,
+              forwardAmount: 0,
+              forwardPayload: emptySlice()
+          }.toCell()
+        });
+      return;
+    }
+    let nftToSend: Address = self.mNfts.get(randomIndex);
+
+    //write newest item to randomIndex
+    self.mNft.set(randomIndex,sender());
+    //send nft to user
+     send(
+          SendParameters{
+          to: nftToSend,
+          value: 0,
+          bounce: true,
+          mode: SendRemainingBalance,
+          body: Transfer{
+              queryId: msg.queryId,
+              newOwner: msg.prevOwner,
+              responseDestination: msg.prevOwner,
+              customPayload: null,
+              forwardAmount: 0,
+              forwardPayload: emptySlice()
+          }.toCell()
+        });
   }
 
   receive(msg: AdminWithdrawalProfit) {
+  //  * AdminWithdrawalProfit 
+  //  - SC should check that sender is the admin / otherwise throw "Insufficient privelegies"
+  //  - SC should send all collected fees to admin except 0.1 TON (use AdminFetchProfit message as body)
+  //    In other words: after each such operation, the contract's balance should be equal to 0.1 TON (which are reserved for storage) and the rest should be sent to the admin
+    require(sender() ==self.owner, "Insufficient privelegies");
+    nativeReserve(myBalance() - ton("0.1"), 0)
+    send(
+          SendParameters{
+          to: self.owner,
+          value: 0,
+          bounce: true,
+          mode: SendRemainingBalance,
+          body: AdminFetchProfit{
+              queryId: msg.queryId
+          }.toCell()
+        });
   }
 
   receive(msg: AdminWithdrawalAllNFTs) {
   }
 
   get fun profit(): Int { 
+    return myBalance() - ton("0.1");
   }
   
   get fun nfts(): map<Int as uint16, Address> { 
+    return self.mNfts;
   }
 }
