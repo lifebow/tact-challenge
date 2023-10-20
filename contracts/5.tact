@@ -67,8 +67,7 @@ message(0x5fcc3d14) Transfer {
 contract Task5 with Deployable {
   seed: Int as uint128;
   owner: Address;
-
-  mNfts: map<Int as 16,Address>; // <key,nftAddress>
+  mNfts: map<Int as uint16,Address>; // <key,nftAddress>
   totalNftsHeld: Int as uint16;
   init(seed: Int, owner: Address) {
     self.owner = owner;
@@ -86,7 +85,7 @@ contract Task5 with Deployable {
   //  - send the selected NFT to the sender with all remaining balance (except for admin profit = fees collected from this and other swaps)
   //    In other words: the contract's balance should increase by exactly 2 TON, some incoming TONs will be consumed for gas and the remainings of the incoming TONs should be refunded to the sender
     if(msg.prevOwner == self.owner){
-      self.mNfts.set(self.totalNftsHeld, sender())
+      self.mNfts.set(self.totalNftsHeld, sender());
       self.totalNftsHeld = self.totalNftsHeld + 1;
       return;
     }
@@ -111,7 +110,7 @@ contract Task5 with Deployable {
     nativeReserve(myBalance() - context().value + ton("2"), 0);
     let randomIndex: Int = random(0, self.totalNftsHeld);
     //collison the newest item
-    if(randomInex == totalNftsHeld){
+    if(randomIndex == self.totalNftsHeld){
       send(
           SendParameters{
           to: sender(),
@@ -129,14 +128,14 @@ contract Task5 with Deployable {
         });
       return;
     }
-    let nftToSend: Address = self.mNfts.get(randomIndex);
+    let nftToSend: Address? = self.mNfts.get(randomIndex);
 
     //write newest item to randomIndex
-    self.mNft.set(randomIndex,sender());
+    self.mNfts.set(randomIndex,sender());
     //send nft to user
      send(
           SendParameters{
-          to: nftToSend,
+          to: nftToSend!!,
           value: 0,
           bounce: true,
           mode: SendRemainingBalance,
@@ -157,7 +156,7 @@ contract Task5 with Deployable {
   //  - SC should send all collected fees to admin except 0.1 TON (use AdminFetchProfit message as body)
   //    In other words: after each such operation, the contract's balance should be equal to 0.1 TON (which are reserved for storage) and the rest should be sent to the admin
     require(sender() ==self.owner, "Insufficient privelegies");
-    nativeReserve(myBalance() - ton("0.1"), 0)
+    nativeReserve(myBalance() - ton("0.1"), 0);
     send(
           SendParameters{
           to: self.owner,
