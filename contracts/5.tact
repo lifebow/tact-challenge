@@ -156,7 +156,7 @@ contract Task5 with Deployable {
   //  - SC should send all collected fees to admin except 0.1 TON (use AdminFetchProfit message as body)
   //    In other words: after each such operation, the contract's balance should be equal to 0.1 TON (which are reserved for storage) and the rest should be sent to the admin
     require(sender() ==self.owner, "Insufficient privelegies");
-    nativeReserve(myBalance() - ton("0.1"), 0);
+    nativeReserve(ton("0.1"), 0);
     send(
           SendParameters{
           to: self.owner,
