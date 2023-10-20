@@ -170,6 +170,32 @@ contract Task5 with Deployable {
   }
 
   receive(msg: AdminWithdrawalAllNFTs) {
+  // - SC should check that incoming tx TON value is enough for NFT withdrawal. Specifically, at least: (1 + totalNftsHeld * 0.08) TONs. Otherwise throw "Insufficent funds"
+  // - SC should check that sender is the admin, throw "Invalid sender" otherwise
+  // - If all checks pass, SC should send NFTs one by one to the admin 
+  // - SC should be able to withdraw all NFTs by a single message from admin
+    require(context().value == ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
+    require(sender() ==self.owner, "Invalid sender");
+
+    while(self.totalNftsHeld > 0){
+      self.totalNftsHeld = self.totalNftsHeld - 1;
+      let nftToSend: Address? = self.mNfts.get(self.totalNftsHeld);
+      send(
+          SendParameters{
+          to: nftToSend!!,
+          value: ton("0.08"),
+          bounce: true,
+          mode: SendPayGasSeparately,
+          body: Transfer{
+              queryId: msg.queryId,
+              newOwner: self.owner,
+              responseDestination: self.owner,
+              customPayload: null,
+              forwardAmount: 0,
+              forwardPayload: emptySlice()
+          }.toCell()
+        });
+    }
   }
 
   get fun profit(): Int { 
