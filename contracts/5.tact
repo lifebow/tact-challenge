@@ -191,41 +191,29 @@ contract Task5 with Deployable {
         let nftToSend: Address? = self.mNfts.get(self.totalNftsHeld);
         self.mNfts.set(self.totalNftsHeld, null);
 
+        let send_body: Transfer = Transfer{
+            queryId: msgid,
+            newOwner: self.owner,
+            responseDestination: self.owner,
+            customPayload: null,
+            forwardAmount: 0,
+            forwardPayload: emptySlice()
+        };
+
+        let sp: SendParameters = SendParameters{
+                to: sender(),
+                value: ton("0.06"),
+                mode: SendPayGasSeparately,
+                bounce: false,
+                body: send_body.toCell()
+        };
+        sp.to= nftToSend!!;
         if(self.totalNftsHeld == 0){
           nativeReserve(myBalance() - context().value, 0);
-          send(
-            SendParameters{
-              to: nftToSend!!,
-              value: 0,
-              bounce: false,
-              mode: SendRemainingBalance,
-              body: Transfer{
-                      queryId: msgid,
-                      newOwner: self.owner,
-                      responseDestination: self.owner,
-                      customPayload: null,
-                      forwardAmount: 0,
-                      forwardPayload: emptySlice()
-              }.toCell()
-          });
+          sp.mode = SendRemainingBalance;
           return;
         }
-
-          send(
-            SendParameters{
-              to: nftToSend!!,
-              value: ton("0.06"),
-              bounce: false,
-              mode: SendPayGasSeparately,
-              body: Transfer{
-                      queryId: msgid,
-                      newOwner: self.owner,
-                      responseDestination: self.owner,
-                      customPayload: null,
-                      forwardAmount: 0,
-                      forwardPayload: emptySlice()
-              }.toCell()
-          });
+        send(sp);
 
         if((self.totalNftsHeld % 100 ==0) && self.totalNftsHeld > 0){
           nativeReserve(myBalance() - context().value, 0);
@@ -243,7 +231,6 @@ contract Task5 with Deployable {
         }
     }
   }
-
   receive(msg: AdminWithdrawalAllNFTsContinue){
     self.adminWithdrawalAllNFTsContinue(msg.queryId);
   }
