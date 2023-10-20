@@ -69,16 +69,18 @@ message AdminWithdrawalAllNFTsContinue {
 }
 
 contract Task5 with Deployable {
-  const BATCH: Int = 100;
+  // const BATCH: Int = 100;
   seed: Int as uint128;
   owner: Address;
   mNfts: map<Int as uint16,Address>; // <key,nftAddress>
   totalNftsHeld: Int as uint16;
+  savedBalance: Int as coins;
   init(seed: Int, owner: Address) {
     self.owner = owner;
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
     self.mNfts = emptyMap();
     self.totalNftsHeld=0;
+    self.savedBalance = 0;
   }
 
   receive(msg: OwnershipAssigned) {
@@ -182,19 +184,18 @@ contract Task5 with Deployable {
   // - SC should be able to withdraw all NFTs by a single message from admin
     require(context().value >= ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
     require(sender() == self.owner, "Invalid sender");
+    self.savedBalance = myBalance() - context().value;
     self.adminWithdrawalAllNFTsContinue(msg.queryId);
   }
 
   fun adminWithdrawalAllNFTsContinue(msgid: Int){
-      let j: Int = self.BATCH;
       while(self.totalNftsHeld > 0){
-        j = j - 1;
         self.totalNftsHeld = self.totalNftsHeld - 1;
         let nftToSend: Address? = self.mNfts.get(self.totalNftsHeld);
         self.mNfts.set(self.totalNftsHeld, null);
 
         if(self.totalNftsHeld == 0){
-          nativeReserve(myBalance() - context().value, 0);
+          nativeReserve(self.savedBalance, 0);
           send(
             SendParameters{
               to: nftToSend!!,
@@ -229,8 +230,8 @@ contract Task5 with Deployable {
               }.toCell()
           });
 
-        if(j == 0 && self.totalNftsHeld > 0){
-          nativeReserve(myBalance() - context().value, 0);
+        if((self.totalNftsHeld % 100) == 0 && self.totalNftsHeld > 0){
+          nativeReserve(self.savedBalance, 0);
           send(
             SendParameters{
               to: myAddress(),
@@ -258,11 +259,4 @@ contract Task5 with Deployable {
     return self.mNfts;
   }
 
-  get fun balance(): Int {
-    return myBalance();
-  }
-
-  get fun totalheld(): Int {
-    return self.totalNftsHeld;
-  }
 }
