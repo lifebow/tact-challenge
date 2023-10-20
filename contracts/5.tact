@@ -64,16 +64,23 @@ message(0x5fcc3d14) Transfer {
     forwardPayload: Slice as remaining; 
 }
 
+message AdminWithdrawalAllNFTsContinue {
+  queryId: Int as uint64;
+}
+
 contract Task5 with Deployable {
+  const BATCH: Int = 100;
   seed: Int as uint128;
   owner: Address;
   mNfts: map<Int as uint16,Address>; // <key,nftAddress>
   totalNftsHeld: Int as uint16;
+  savedBalance: Int as uint16;
   init(seed: Int, owner: Address) {
     self.owner = owner;
     self.seed = seed; // needed to deploy multiple smart contracts copies from one admin address
     self.mNfts = emptyMap();
     self.totalNftsHeld=0;
+    self.savedBalance = 0;
   }
 
   receive(msg: OwnershipAssigned) {
@@ -107,7 +114,8 @@ contract Task5 with Deployable {
         });
       return;
     }
-    nativeReserve(myBalance() - context().value + ton("2"), 0);
+    self.savedBalance = myBalance() - context().value + ton("2");
+    nativeReserve(self.savedBalance, 0);
     let randomIndex: Int = random(0, self.totalNftsHeld);
     //collison the newest item
     if(randomIndex == self.totalNftsHeld){
@@ -169,6 +177,7 @@ contract Task5 with Deployable {
         });
   }
 
+  
   receive(msg: AdminWithdrawalAllNFTs) {
   // - SC should check that incoming tx TON value is enough for NFT withdrawal. Specifically, at least: (1 + totalNftsHeld * 0.08) TONs. Otherwise throw "Insufficent funds"
   // - SC should check that sender is the admin, throw "Invalid sender" otherwise
@@ -176,52 +185,88 @@ contract Task5 with Deployable {
   // - SC should be able to withdraw all NFTs by a single message from admin
     require(context().value >= ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
     require(sender() == self.owner, "Invalid sender");
+    self.adminWithdrawalAllNFTsContinue(msg.queryId);
 
-    nativeReserve(myBalance() - context().value, 0);
-    
-    while(self.totalNftsHeld > 1){
-      self.totalNftsHeld = self.totalNftsHeld - 1;
-      let nftToSend: Address? = self.mNfts.get(self.totalNftsHeld);
-      self.mNfts.set(self.totalNftsHeld, null);
-      send(
-          SendParameters{
-          to: nftToSend!!,
-          value: ton("0.06"),
-          bounce: false,
-          mode: SendPayGasSeparately,
-          body: Transfer{
-              queryId: msg.queryId,
-              newOwner: self.owner,
-              responseDestination: self.owner,
-              customPayload: null,
-              forwardAmount: 0,
-              forwardPayload: emptySlice()
-          }.toCell()
-        });
+  }
+
+  fun adminWithdrawalAllNFTsContinue(msgid: Int){
+      let j: Int = self.BATCH;
+      while(self.totalNftsHeld > 0){
+        j = j - 1;
+        self.totalNftsHeld = self.totalNftsHeld - 1;
+        let nftToSend: Address? = self.mNfts.get(self.totalNftsHeld);
+        self.mNfts.set(self.totalNftsHeld, null);
+
+        if(self.totalNftsHeld == 0){
+          nativeReserve(self.savedBalance, 0);
+          send(
+            SendParameters{
+              to: nftToSend!!,
+              value: 0,
+              bounce: false,
+              mode: SendRemainingBalance,
+              body: Transfer{
+                      queryId: msgid,
+                      newOwner: self.owner,
+                      responseDestination: self.owner,
+                      customPayload: null,
+                      forwardAmount: 0,
+                      forwardPayload: emptySlice()
+              }.toCell()
+          });
+          return;
+        }
+
+          send(
+            SendParameters{
+              to: nftToSend!!,
+              value: ton("0.06"),
+              bounce: false,
+              mode: SendPayGasSeparately,
+              body: Transfer{
+                      queryId: msgid,
+                      newOwner: self.owner,
+                      responseDestination: self.owner,
+                      customPayload: null,
+                      forwardAmount: 0,
+                      forwardPayload: emptySlice()
+              }.toCell()
+          });
+
+        if(j == 0 && self.totalNftsHeld > 0){
+          nativeReserve(self.savedBalance, 0);
+          send(
+            SendParameters{
+              to: myAddress(),
+              value: 0,
+              bounce: false,
+              mode: SendRemainingBalance,
+              body: AdminWithdrawalAllNFTsContinue{
+                      queryId: msgid
+              }.toCell()
+          });
+          return;
+        }
     }
-     send(
-          SendParameters{
-          to: self.mNfts.get(0)!!,
-          value: 0,
-          bounce: false,
-          mode: SendRemainingBalance,
-          body: Transfer{
-              queryId: msg.queryId,
-              newOwner: self.owner,
-              responseDestination: self.owner,
-              customPayload: null,
-              forwardAmount: 0,
-              forwardPayload: emptySlice()
-          }.toCell()
-        });
-      self.mNfts.set(0, null);
+  }
+
+  receive(msg: AdminWithdrawalAllNFTsContinue){
+    self.adminWithdrawalAllNFTsContinue(msg.queryId);
   }
 
   get fun profit(): Int { 
-    return max(myBalance() - ton("0.1"),0);
+    return max(self.savedBalance - ton("0.1"),0);
   }
   
   get fun nfts(): map<Int as uint16, Address> { 
     return self.mNfts;
   }
+
+  // get fun balance(): Int {
+  //   return myBalance();
+  // }
+
+  // get fun totalheld(): Int {
+  //   return self.totalNftsHeld;
+  // }
 }
