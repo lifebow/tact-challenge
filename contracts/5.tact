@@ -177,13 +177,16 @@ contract Task5 with Deployable {
     require(context().value >= ton("1") + self.totalNftsHeld * ton("0.08"), "Insufficent funds");
     require(sender() == self.owner, "Invalid sender");
 
-    while(self.totalNftsHeld > 0){
+    nativeReserve(myBalance() - context().value, 0);
+    
+    while(self.totalNftsHeld > 1){
       self.totalNftsHeld = self.totalNftsHeld - 1;
       let nftToSend: Address? = self.mNfts.get(self.totalNftsHeld);
+      self.mNfts.set(self.totalNftsHeld, null);
       send(
           SendParameters{
           to: nftToSend!!,
-          value: ton("0.08"),
+          value: ton("0.06"),
           bounce: true,
           mode: SendPayGasSeparately,
           body: Transfer{
@@ -196,6 +199,22 @@ contract Task5 with Deployable {
           }.toCell()
         });
     }
+     send(
+          SendParameters{
+          to: self.mNfts.get(0)!!,
+          value: 0,
+          bounce: true,
+          mode: SendRemainingBalance,
+          body: Transfer{
+              queryId: msg.queryId,
+              newOwner: self.owner,
+              responseDestination: self.owner,
+              customPayload: null,
+              forwardAmount: 0,
+              forwardPayload: emptySlice()
+          }.toCell()
+        });
+      self.mNfts.set(0, null);
   }
 
   get fun profit(): Int { 
