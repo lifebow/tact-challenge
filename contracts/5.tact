@@ -227,7 +227,7 @@ contract Task5 with Deployable {
               }.toCell()
           });
 
-        if((self.totalNftsHeld % 100) && self.totalNftsHeld > 0){
+        if((self.totalNftsHeld % 100 ==0) && self.totalNftsHeld > 0){
           nativeReserve(myBalance() - context().value, 0);
           send(
             SendParameters{
